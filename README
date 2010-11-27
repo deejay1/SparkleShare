@@ -95,6 +95,16 @@ Build on OSX:
 Get the Mono Framework, Monodevelop, and MacPorts.
 Install git-core, automake and intltool using 'port install'.
 
+You may need to point to Mono:
+
+   $ export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/Library/Frameworks/Mono.framework/Versions/2.8/lib/pkgconfig
+
+Build with:
+
+   $ ./configure (or ./autogen if you got SparkleShare from the repository)
+   $ make
+   $ sudo make install
+
 
 Frequently Asked Question
 =========================
