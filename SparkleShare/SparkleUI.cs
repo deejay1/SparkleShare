@@ -133,9 +133,9 @@ namespace SparkleShare {
 					else
 						bubble.Icon = SparkleUIHelpers.GetIcon ("avatar-default", 32);
 					
-					foreach (SparkleLog log in OpenLogs)
-						if (log.LocalPath.Equals (repository_path))
-							log.Update ();
+					//foreach (SparkleLog log in OpenLogs)
+					//	if (log.LocalPath.Equals (repository_path))
+					//		log.Update ();
 
 //					bubble.AddAction ("", "Show Events", delegate {
 				

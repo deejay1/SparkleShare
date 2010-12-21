@@ -22,7 +22,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
-using WebKit;
+//using WebKit;
 
 namespace SparkleShare {
 
@@ -32,7 +32,7 @@ namespace SparkleShare {
 		private VBox LayoutVertical;
 		private ScrolledWindow ScrolledWindow;
 		private MenuBar MenuBar;
-		private WebView WebView;
+//		private WebView WebView;
 
 		// Short alias for the translations
 		public static string _ (string s)
@@ -40,6 +40,7 @@ namespace SparkleShare {
 			return Catalog.GetString (s);
 		}
 
+		
 
 		public SparkleLog (string path) : base ("")
 		{
@@ -173,7 +174,7 @@ namespace SparkleShare {
 		}
 
 
-		public void UpdateEventLog (SparkleCommit commit, string repository_path)
+		public void UpdateEventLog ()
 		{
 
 			Application.Invoke (delegate {
@@ -192,14 +193,14 @@ namespace SparkleShare {
 		private ScrolledWindow CreateEventLog ()
 		{
 
-			List <SparkleCommit> commits = new List <SparkleCommit> ();
+/*			List <ChangeSet> changesets = new List <ChangeSet> ();
 
 			foreach (SparkleRepo repo in SparkleShare.Controller.Repositories) {
 // Controller.GetCommits (LocalPath);
 				// Get commits from the repository
 				if (repo.LocalPath.Equals (LocalPath)) {
 
-					commits = repo.GetCommits (25);
+					 changesets = repo.GetCommits (25);
 
 /*					// Update the log when there are new remote changes
 					repo.NewCommit += UpdateEventLog;
@@ -210,208 +211,18 @@ namespace SparkleShare {
 
 					repo.FetchingFinished += UpdateEventLog;   TODO: Move to controller
 					repo.FetchingFailed += UpdateEventLog;
-*/
+
 					break;
 
 				}
 
-			}
+			}*/
 
 
-			List <ActivityDay> activity_days = new List <ActivityDay> ();
-
-			foreach (SparkleCommit commit in commits) {
-
-				SparkleUIHelpers.GetAvatar (commit.UserEmail, 32);
-
-				bool commit_inserted = false;
-				foreach (ActivityDay stored_activity_day in activity_days) {
-
-					if (stored_activity_day.DateTime.Year  == commit.DateTime.Year &&
-					    stored_activity_day.DateTime.Month == commit.DateTime.Month &&
-					    stored_activity_day.DateTime.Day   == commit.DateTime.Day) {
-
-					    stored_activity_day.Add (commit);
-					    commit_inserted = true;
-					    break;
-
-					}
-
-				}
-				
-				if (!commit_inserted) {
-
-						ActivityDay activity_day = new ActivityDay (commit.DateTime);
-						activity_day.Add (commit);
-						activity_days.Add (activity_day);
-					
-				}
-
-			}
-
-
-
-
-			StreamReader reader;
-
-			reader = new StreamReader (Defines.PREFIX + "/share/sparkleshare/html/event-log.html");
-			string event_log_html = reader.ReadToEnd ();
-			reader.Close ();
-
-			reader = new StreamReader (Defines.PREFIX + "/share/sparkleshare/html/day-entry.html");
-			string day_entry_html = reader.ReadToEnd ();
-			reader.Close ();
-
-			reader = new StreamReader (Defines.PREFIX + "/share/sparkleshare/html/event-entry.html");
-			string event_entry_html = reader.ReadToEnd ();
-			reader.Close ();
-
-
-			if (SparkleShare.Controller.Repositories.Find (
-					delegate (SparkleRepo r)
-						{ return r.LocalPath.Equals (LocalPath) && r.HasUnsyncedChanges; }
-				) != null) {
-
-				string title = _("This folder has unsynced changes");
-				string text  = _("We will sync these once we’re connected again");
-
-				SparkleInfobar infobar = new SparkleInfobar ("dialog-error", title, text);
-
-				LayoutVertical.PackStart (infobar, false, false, 0);
-
-			} else {
-
-				if (SparkleShare.Controller.Repositories.Find (
-					delegate (SparkleRepo r)
-						{ return r.LocalPath.Equals (LocalPath) && r.HasUnsyncedChanges; }
-					) != null) {
-
-						string title = _("Could not sync with the remote folder");
-						string text  = _("Is the you and the server online?");
-
-						SparkleInfobar infobar = new SparkleInfobar ("dialog-error", title, text);
-
-						LayoutVertical.PackStart (infobar, false, false, 0);
-
-				}
-
-			}
-
-			string event_log = "";
-
-			foreach (ActivityDay activity_day in activity_days) {
-
-				string event_entries = "";
-
-				foreach (SparkleCommit change_set in activity_day) {
-
-					string event_entry = "<dl>";
-
-					if (change_set.Edited.Count > 0) {
-
-						event_entry += "<dt>Edited</dt>";
-
-						foreach (string file_path in change_set.Edited) {
-
-							if (File.Exists (SparkleHelpers.CombineMore (LocalPath, file_path))) {
-
-								event_entry += "<dd><a href='#'>" + file_path + "</a></dd>";
-
-							} else {
-
-								event_entry += "<dd>" + SparkleHelpers.CombineMore (LocalPath, file_path) + "</dd>";
-
-							}
-
-						}
-
-					}
-
-
-					if (change_set.Added.Count > 0) {
-
-						event_entry += "<dt>Added</dt>";
-
-						foreach (string file_path in change_set.Added) {
-
-							if (File.Exists (SparkleHelpers.CombineMore (LocalPath, file_path))) {
-
-								event_entry += "<dd><a href='#'>" + file_path + "</a></dd>";
-
-							} else {
-
-								event_entry += "<dd>" + SparkleHelpers.CombineMore (LocalPath, file_path) + "</dd>";
-
-							}
-
-						}
-
-					}
-
-					if (change_set.Deleted.Count > 0) {
-
-						event_entry += "<dt>Deleted</dt>";
-
-						foreach (string file_path in change_set.Deleted) {
-
-							if (File.Exists (SparkleHelpers.CombineMore (LocalPath, file_path))) {
-
-								event_entry += "<dd><a href='#'>" + file_path + "</a></dd>";
-
-							} else {
-
-								event_entry += "<dd>" + SparkleHelpers.CombineMore (LocalPath, file_path) + "</dd>";
-
-							}
-
-						}
-
-					}
-Console.WriteLine(SparkleUIHelpers.GetAvatar (change_set.UserEmail, 32));
-					event_entry += "</dl>";
-					event_entries += event_entry_html.Replace ("<!-- $event-entry-content -->", event_entry)
-						.Replace ("<!-- $event-user-name -->", change_set.UserName)
-						.Replace ("<!-- $event-avatar-url -->", "file://" + SparkleUIHelpers.GetAvatar (change_set.UserEmail, 32))
-						.Replace ("<!-- $event-time -->", change_set.DateTime.ToString ("H:mm"));
-
-				}
-
-
-
-				string day_entry = "";
-
-				DateTime today = DateTime.Now;
-				DateTime yesterday = DateTime.Now.AddDays (-1);
-
-				if (today.Day   == activity_day.DateTime.Day &&
-				    today.Month == activity_day.DateTime.Month && 
-				    today.Year  == activity_day.DateTime.Year) {
-
-					day_entry = day_entry_html.Replace ("<!-- $day-entry-header -->", "<b>Today</b>");
-
-				} else if (yesterday.Day   == activity_day.DateTime.Day &&
-				           yesterday.Month == activity_day.DateTime.Month &&
-				           yesterday.Year  == activity_day.DateTime.Year) {
-
-					day_entry = day_entry_html.Replace ("<!-- $day-entry-header -->", "<b>Yesterday</b>");
-
-				} else {
-
-					day_entry = day_entry_html.Replace ("<!-- $day-entry-header -->",
-						"<b>" + activity_day.DateTime.ToString ("ddd MMM d, yyyy") + "</b>");
-
-				}
-
-				event_log += day_entry.Replace ("<!-- $day-entry-content -->", event_entries);
-
-
-			}
-
-			string html = event_log_html.Replace ("<!-- $event-log-content -->", event_log);
-
+			
 
 			// Style the html page like the GTK theme
-			html = html.Replace ("<!-- $body-font-size -->", (Style.FontDescription.Size / 1024 + 0.5) + "pt");
+		/*	html = html.Replace ("<!-- $body-font-size -->", (Style.FontDescription.Size / 1024 + 0.5) + "pt");
 			html = html.Replace ("<!-- $body-font-family -->", "\"" + Style.FontDescription.Family + "\"");
 			html = html.Replace ("<!-- $body-color -->", SparkleUIHelpers.GdkColorToHex (Style.Foreground (StateType.Normal)));
 			html = html.Replace ("<!-- $body-background-color -->", SparkleUIHelpers.GdkColorToHex (new TreeView ().Style.Base (StateType.Normal)));
@@ -441,17 +252,20 @@ WebView.NavigationRequested += delegate (object o, WebKit.NavigationRequestedArg
 Console.WriteLine ("CLICKED!:" + Status);
             }
             };
-			ScrolledWindow = new ScrolledWindow () {
-				HscrollbarPolicy = PolicyType.Never
-			};
+
 
 
 //				wrapper.ModifyBg (StateType.Normal, background_color);
 
 				WebView.LoadHtmlString (html, "file://");
 				WebView.HoveringOverLink += delegate {};
+			 */
 
-			ScrolledWindow.AddWithViewport (WebView);
+			ScrolledWindow = new ScrolledWindow () {
+				HscrollbarPolicy = PolicyType.Never
+			};
+			
+			ScrolledWindow.AddWithViewport (new Label (SparkleShare.Controller.GetHTMLLog (LocalPath)));
 			(ScrolledWindow.Child as Viewport).ShadowType = ShadowType.None;
 
 			return ScrolledWindow;
@@ -461,20 +275,6 @@ public string Status = null;
 
 	}
 
-	// All commits that happened on a day
-	public class ActivityDay : List <SparkleCommit>
-	{
 
-		public DateTime DateTime;
-
-		public ActivityDay (DateTime date_time)
-		{
-
-			DateTime = date_time;
-			DateTime = new DateTime (DateTime.Year, DateTime.Month, DateTime.Day);
-
-		}
-
-	}
 
 }

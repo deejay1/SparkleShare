@@ -229,6 +229,204 @@ namespace SparkleShare {
 		}
 		
 		
+		public string GetHTMLLog (string path)
+		{
+		
+
+			List <ChangeSet> changesets = new List <ChangeSet> ();
+
+			foreach (SparkleRepo repo in SparkleShare.Controller.Repositories) {
+				Console.WriteLine (path);
+				Console.WriteLine (repo.LocalPath);
+				// Get commits from the repository
+				if (repo.LocalPath.Equals (path)) {
+					
+	
+					foreach (SparkleCommit commit in repo.GetCommits (25)){
+		
+						changesets.Add ((commit as ChangeSet));
+						//Console.WriteLine (changesets [0].DateTime.ToString ());
+					}
+					break;
+
+				}
+
+			}
+			Console.WriteLine (changesets.Count);
+			
+			List <ActivityDay> activity_days = new List <ActivityDay> ();
+
+			foreach (ChangeSet changeset in changesets) {
+				
+				//SparkleUIHelpers.GetAvatar (changeset.UserEmail, 32);
+
+				bool changeset_inserted = false;
+				Console.WriteLine ("~~~~~~~~~~~");				
+				foreach (ActivityDay stored_activity_day in activity_days) {
+
+					if (stored_activity_day.DateTime.Year  == changeset.DateTime.Year &&
+					    stored_activity_day.DateTime.Month == changeset.DateTime.Month &&
+					    stored_activity_day.DateTime.Day   == changeset.DateTime.Day) {
+
+					    stored_activity_day.Add (changeset);
+					    changeset_inserted = true;
+					    break;
+
+					}
+					 
+				}
+		
+				if (!changeset_inserted) {
+					
+					Console.WriteLine (changeset.DateTime.ToString ());
+
+					
+				}
+
+			}
+
+			Console.WriteLine ("33333333333333333333333");
+
+
+			StreamReader reader;
+
+			reader = new StreamReader (Defines.PREFIX + "/share/sparkleshare/html/event-log.html");
+			string event_log_html = reader.ReadToEnd ();
+			reader.Close ();
+
+			reader = new StreamReader (Defines.PREFIX + "/share/sparkleshare/html/day-entry.html");
+			string day_entry_html = reader.ReadToEnd ();
+			reader.Close ();
+
+			reader = new StreamReader (Defines.PREFIX + "/share/sparkleshare/html/event-entry.html");
+			string event_entry_html = reader.ReadToEnd ();
+			reader.Close ();
+
+
+
+
+			string event_log = "";
+
+			foreach (ActivityDay activity_day in activity_days) {
+
+				string event_entries = "";
+
+				foreach (ChangeSet change_set in activity_day) {
+
+					string event_entry = "<dl>";
+
+					if (change_set.Edited.Count > 0) {
+
+						event_entry += "<dt>Edited</dt>";
+
+						foreach (string file_path in change_set.Edited) {
+
+							if (File.Exists (SparkleHelpers.CombineMore (path, file_path))) {
+
+								event_entry += "<dd><a href='#'>" + file_path + "</a></dd>";
+
+							} else {
+
+								event_entry += "<dd>" + SparkleHelpers.CombineMore (path, file_path) + "</dd>";
+
+							}
+
+						}
+
+					}
+
+
+					if (change_set.Added.Count > 0) {
+
+						event_entry += "<dt>Added</dt>";
+
+						foreach (string file_path in change_set.Added) {
+
+							if (File.Exists (SparkleHelpers.CombineMore (path, file_path))) {
+
+								event_entry += "<dd><a href='#'>" + file_path + "</a></dd>";
+
+							} else {
+
+								event_entry += "<dd>" + SparkleHelpers.CombineMore (path, file_path) + "</dd>";
+
+							}
+
+						}
+
+					}
+
+					if (change_set.Deleted.Count > 0) {
+
+						event_entry += "<dt>Deleted</dt>";
+
+						foreach (string file_path in change_set.Deleted) {
+
+							if (File.Exists (SparkleHelpers.CombineMore (path, file_path))) {
+
+								event_entry += "<dd><a href='#'>" + file_path + "</a></dd>";
+
+							} else {
+
+								event_entry += "<dd>" + SparkleHelpers.CombineMore (path, file_path) + "</dd>";
+
+							}
+
+						}
+
+					}
+Console.WriteLine(SparkleUIHelpers.GetAvatar (change_set.UserEmail, 32));
+					event_entry += "</dl>";
+					event_entries += event_entry_html.Replace ("<!-- $event-entry-content -->", event_entry)
+						.Replace ("<!-- $event-user-name -->", change_set.UserName)
+						.Replace ("<!-- $event-avatar-url -->", "file://" + SparkleUIHelpers.GetAvatar (change_set.UserEmail, 32))
+						.Replace ("<!-- $event-time -->", change_set.DateTime.ToString ("H:mm"));
+
+				}
+
+
+
+				string day_entry = "";
+
+				DateTime today = DateTime.Now;
+				DateTime yesterday = DateTime.Now.AddDays (-1);
+
+				if (today.Day   == activity_day.DateTime.Day &&
+				    today.Month == activity_day.DateTime.Month && 
+				    today.Year  == activity_day.DateTime.Year) {
+
+					day_entry = day_entry_html.Replace ("<!-- $day-entry-header -->", "<b>Today</b>");
+
+				} else if (yesterday.Day   == activity_day.DateTime.Day &&
+				           yesterday.Month == activity_day.DateTime.Month &&
+				           yesterday.Year  == activity_day.DateTime.Year) {
+
+					day_entry = day_entry_html.Replace ("<!-- $day-entry-header -->", "<b>Yesterday</b>");
+
+				} else {
+
+					day_entry = day_entry_html.Replace ("<!-- $day-entry-header -->",
+						"<b>" + activity_day.DateTime.ToString ("ddd MMM d, yyyy") + "</b>");
+
+				}
+
+				event_log += day_entry.Replace ("<!-- $day-entry-content -->", event_entries);
+
+
+			}
+
+			string html = event_log_html.Replace ("<!-- $event-log-content -->", event_log);
+
+			
+			
+			
+			
+			return html;
+			
+			
+		}
+		
+		
 		// Creates a folder in the user's home folder to store configuration
 		private void CreateConfigurationFolders ()
 		{
@@ -827,4 +1025,21 @@ namespace SparkleShare {
 
 	}
 
+
+	// All commits that happened on a day
+	public class ActivityDay : List <ChangeSet>
+	{
+
+		public DateTime DateTime;
+
+		public ActivityDay (DateTime date_time)
+		{
+
+			DateTime = date_time;
+			DateTime = new DateTime (DateTime.Year, DateTime.Month, DateTime.Day);
+
+		}
+
+	}
+	
 }
