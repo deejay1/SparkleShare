@@ -1077,6 +1077,9 @@ namespace SparkleShare {
             if (File.Exists (new_version_file_path))
                 File.Delete (new_version_file_path);
 
+			if (!Directory.Exists (SparklePaths.SparkleTmpPath))
+				Directory.CreateDirectory (SparklePaths.SparkleTmpPath);
+
             WebClient web_client = new WebClient ();
             Uri uri = new Uri ("http://www.sparkleshare.org/version");
 
